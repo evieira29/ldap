@@ -1,0 +1,5 @@
+#- hosts: prdx-ansible15
+- hosts: all:!id
+  become: yes
+  roles:
+  - ldap-clients

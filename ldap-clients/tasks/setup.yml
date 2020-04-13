@@ -1,0 +1,4 @@
+---
+# SETUP
+- name: Setup ldap host
+  command: authconfig --enableldap --enableldapauth --enablemkhomedir --ldapserver=prdx-ldap15.ziyotek5.local --ldapbasedn="dc=ziyotek5,dc=local" --update

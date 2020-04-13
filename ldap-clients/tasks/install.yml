@@ -1,0 +1,8 @@
+---
+# PACKAGES
+
+- name: Install ldap client packages
+  yum: 
+    pkg:
+      - openldap-clients
+      - nss-pam-ldapd     

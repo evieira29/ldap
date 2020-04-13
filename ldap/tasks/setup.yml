@@ -1,0 +1,53 @@
+# SLAPPASSWD
+- name: create a password file
+  file:
+    path: /root/secret.txt
+    state: touch
+    mode: 600
+
+- name: Generate password for ldap
+  shell: slappasswd -h {SSHA} -s password
+  register: pw_output
+
+- name: copy output to a secret.txt
+  copy:
+    content: "{{ pw_output.stdout }}"
+    dest: "/root/secret.txt"
+
+# CUSTOM SCHEMA FILES
+- name: create myschema dir
+  file:
+    path: /etc/openldap/myschema
+    state: directory
+
+- name: Copy hdb.ldif for creating custom database structure
+  template:
+    src: /ansible/roles/ldap/templates/hdb.ldif.j2
+    dest: /etc/openldap/myschema/hdb.ldif
+    owner: root
+    group: root
+
+- name: Add ldap password to hdb.ldif file
+  shell: sed -i '9 a olcRootPW{{":"}} {{ pw_output.stdout }}' /etc/openldap/myschema/hdb.ldif
+
+- name: Copy monitor.ldif file for creating login credentials
+  template:
+    src: /ansible/roles/ldap/templates/monitor.ldif.j2
+    dest: /etc/openldap/myschema/monitor.ldif
+    owner: root
+    group: root
+
+# MODIFY LDAP W/ CUSTOM SCHEMA FILES
+- name: adding our files to ldap with ldapmodify
+  command: ldapmodify -Y EXTERNAL -H ldapi:/// -f "{{ item }}"
+  with_items:
+  - /etc/openldap/myschema/hdb.ldif
+  - /etc/openldap/myschema/monitor.ldif
+  ignore_errors: yes
+  notify: ldap service
+
+# ADD BASE SCHEMA
+- name: Adding base schema config
+  shell: for i in cosine nis inetorgperson; do ldapadd -Y EXTERNAL -H ldapi:/// -f /etc/openldap/schema/$i.ldif; done
+  ignore_errors: yes
+

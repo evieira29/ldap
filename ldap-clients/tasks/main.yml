@@ -1,0 +1,4 @@
+---
+# tasks file for ldap-clients
+- import_tasks: install.yml
+- import_tasks: setup.yml
